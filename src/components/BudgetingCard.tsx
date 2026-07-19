@@ -13,6 +13,7 @@ import {
 } from "../lib/budgeting";
 import { newId } from "../lib/appState";
 import { formatCurrency } from "../lib/format";
+import { CollapsibleCard } from "./CollapsibleCard";
 
 interface Props {
   onPushFreeCashFlow: (monthlyAmount: number) => void;
@@ -94,9 +95,12 @@ export function BudgetingCard({ onPushFreeCashFlow }: Props) {
   const mappingReady = dateCol !== null && descCol !== null &&
     (useDebitCredit ? debitCol !== null || creditCol !== null : amountCol !== null);
 
+  const summary = fileName
+    ? `${fileName}, ${formatCurrency(avgFreeCashFlow)}/mo avg free cash flow`
+    : "No file uploaded";
+
   return (
-    <section className="card">
-      <h2>Budgeting</h2>
+    <CollapsibleCard title="Budgeting" summary={summary}>
       <p className="hint">
         Upload a CSV export from your bank to see expenses by category and
         your average monthly free cash flow. Everything runs in your browser
@@ -319,6 +323,6 @@ export function BudgetingCard({ onPushFreeCashFlow }: Props) {
         perfect. Review the monthly totals before relying on the free cash
         flow figure.
       </p>
-    </section>
+    </CollapsibleCard>
   );
 }

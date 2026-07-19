@@ -5,6 +5,7 @@ import {
   type SuperResult,
 } from "../lib/superannuation";
 import { formatCurrency } from "../lib/format";
+import { CollapsibleCard } from "./CollapsibleCard";
 import { NumberField } from "./NumberField";
 
 interface Props {
@@ -32,9 +33,10 @@ export function SuperCard({
   result,
   onChange,
 }: Props) {
+  const summary = `${formatCurrency(superStartingBalance)} balance, ${superSgRatePct}% SG`;
+
   return (
-    <section className="card">
-      <h2>Superannuation</h2>
+    <CollapsibleCard title="Superannuation" summary={summary}>
       <div className="field-grid">
         <label className="field">
           <span>Starting super balance</span>
@@ -122,6 +124,6 @@ export function SuperCard({
         ATO figures and are periodically indexed. Does not model Division 293
         tax for very high incomes, or contribution eligibility rules.
       </p>
-    </section>
+    </CollapsibleCard>
   );
 }

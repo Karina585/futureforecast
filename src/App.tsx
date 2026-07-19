@@ -216,7 +216,7 @@ function App() {
           <EventsCard events={state.events} onChange={setEvents} />
         </div>
 
-        <div className="app-column">
+        <div className="app-column app-column--sticky">
           <section className="card">
             <h2>Loan &amp; offset forecast</h2>
             <SummaryCards

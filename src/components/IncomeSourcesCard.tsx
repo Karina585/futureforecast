@@ -2,6 +2,7 @@ import type { IncomeSource } from "../lib/auTax";
 import { netIncomeSourcesTotal } from "../lib/auTax";
 import { newId } from "../lib/appState";
 import { formatCurrency } from "../lib/format";
+import { CollapsibleCard } from "./CollapsibleCard";
 import { NumberField } from "./NumberField";
 
 interface Props {
@@ -26,10 +27,13 @@ export function IncomeSourcesCard({ sources, onChange }: Props) {
   const add = () => onChange([...sources, makeSource()]);
 
   const total = netIncomeSourcesTotal(sources);
+  const summary =
+    sources.length === 0
+      ? "None"
+      : `${sources.length} source${sources.length > 1 ? "s" : ""}, ${formatCurrency(total)} net`;
 
   return (
-    <section className="card">
-      <h2>Other income</h2>
+    <CollapsibleCard title="Other income" summary={summary} defaultOpen={sources.length > 0}>
       <p className="hint">
         Non-salary income such as rental income. Each source's net amount
         (gross minus deductible expenses) is added to your taxable income — a
@@ -104,6 +108,6 @@ export function IncomeSourcesCard({ sources, onChange }: Props) {
           + Add income source
         </button>
       </div>
-    </section>
+    </CollapsibleCard>
   );
 }
