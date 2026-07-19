@@ -26,7 +26,7 @@ export function MortgageCard({
   onChange,
 }: Props) {
   return (
-    <section className="card">
+    <section className="card mortgage-card">
       <h2>Mortgage &amp; offset account</h2>
       <div className="field-grid">
         <label className="field">

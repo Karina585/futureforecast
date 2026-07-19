@@ -29,7 +29,7 @@ export function TaxCard({
   onChange,
 }: Props) {
   return (
-    <section className="card">
+    <section className="card tax-card">
       <h2>Salary &amp; income tax</h2>
       <div className="field-grid">
         <label className="field">

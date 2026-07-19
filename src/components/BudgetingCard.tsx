@@ -100,7 +100,7 @@ export function BudgetingCard({ onPushFreeCashFlow }: Props) {
     : "No file uploaded";
 
   return (
-    <CollapsibleCard title="Budgeting" summary={summary}>
+    <CollapsibleCard title="Budgeting" summary={summary} className="budgeting-card">
       <p className="hint">
         Upload a CSV export from your bank to see expenses by category and
         your average monthly free cash flow. Everything runs in your browser

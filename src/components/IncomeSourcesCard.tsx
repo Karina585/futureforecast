@@ -33,7 +33,12 @@ export function IncomeSourcesCard({ sources, onChange }: Props) {
       : `${sources.length} source${sources.length > 1 ? "s" : ""}, ${formatCurrency(total)} net`;
 
   return (
-    <CollapsibleCard title="Other income" summary={summary} defaultOpen={sources.length > 0}>
+    <CollapsibleCard
+      title="Other income"
+      summary={summary}
+      defaultOpen={sources.length > 0}
+      className="income-card"
+    >
       <p className="hint">
         Non-salary income such as rental income. Each source's net amount
         (gross minus deductible expenses) is added to your taxable income — a

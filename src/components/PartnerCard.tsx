@@ -31,7 +31,7 @@ export function PartnerCard({
   onChange,
 }: Props) {
   return (
-    <section className="card">
+    <section className="card partner-card">
       <h2>Partner</h2>
       <label className="field checkbox">
         <input

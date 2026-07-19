@@ -217,7 +217,7 @@ function App() {
         </div>
 
         <div className="app-column app-column--sticky">
-          <section className="card">
+          <section className="card forecast-card">
             <h2>Loan &amp; offset forecast</h2>
             <SummaryCards
               withExtras={mortgageResult}

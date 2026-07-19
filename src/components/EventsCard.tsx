@@ -50,7 +50,7 @@ export function EventsCard({ events, onChange }: Props) {
   const add = (kind: ScheduledEvent["kind"]) => onChange([...events, makeEvent(kind)]);
 
   return (
-    <section className="card">
+    <section className="card events-card">
       <h2>Extra repayments &amp; redraws</h2>
       <p className="hint">
         Extra repayments top up your offset account; redraws pull money back out.

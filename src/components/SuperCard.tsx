@@ -36,7 +36,7 @@ export function SuperCard({
   const summary = `${formatCurrency(superStartingBalance)} balance, ${superSgRatePct}% SG`;
 
   return (
-    <CollapsibleCard title="Superannuation" summary={summary}>
+    <CollapsibleCard title="Superannuation" summary={summary} className="super-card">
       <div className="field-grid">
         <label className="field">
           <span>Starting super balance</span>

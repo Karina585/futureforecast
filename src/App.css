@@ -106,11 +106,47 @@ body {
   }
 }
 
+@media (max-width: 900px) {
+  /* Flatten the column wrappers so every card becomes a direct grid item —
+     lets `order` below reorder cards regardless of which column they were
+     in, instead of showing every input before the forecast that depends on it.
+     Must come after the base .app-column rule above to win the cascade. */
+  .app-column {
+    display: contents;
+  }
+
+  .tax-card {
+    order: 1;
+  }
+  .mortgage-card {
+    order: 2;
+  }
+  .events-card {
+    order: 3;
+  }
+  .forecast-card {
+    order: 4;
+  }
+  .partner-card {
+    order: 5;
+  }
+  .income-card {
+    order: 6;
+  }
+  .super-card {
+    order: 7;
+  }
+  .budgeting-card {
+    order: 8;
+  }
+}
+
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px 24px 24px;
+  min-width: 0;
 }
 
 .card h2 {

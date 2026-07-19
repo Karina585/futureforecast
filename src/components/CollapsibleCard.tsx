@@ -4,14 +4,21 @@ interface Props {
   title: string;
   summary?: string;
   defaultOpen?: boolean;
+  className?: string;
   children: ReactNode;
 }
 
-export function CollapsibleCard({ title, summary, defaultOpen = false, children }: Props) {
+export function CollapsibleCard({
+  title,
+  summary,
+  defaultOpen = false,
+  className,
+  children,
+}: Props) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section className="card">
+    <section className={className ? `card ${className}` : "card"}>
       <button
         type="button"
         className="card-toggle"
