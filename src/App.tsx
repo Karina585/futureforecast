@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { calculateAuTax, netIncomeSourcesTotal, type IncomeSource } from "./lib/auTax";
 import { simulateMortgage, type ScheduledEvent } from "./lib/mortgage";
-import { DEFAULT_STATE, type AppState } from "./lib/appState";
+import { DEFAULT_STATE, newId, type AppState } from "./lib/appState";
 import { loadState, saveState } from "./lib/storage";
 import { TaxCard } from "./components/TaxCard";
 import { PartnerCard } from "./components/PartnerCard";
 import { IncomeSourcesCard } from "./components/IncomeSourcesCard";
 import { SuperCard } from "./components/SuperCard";
+import { BudgetingCard } from "./components/BudgetingCard";
 import { MortgageCard } from "./components/MortgageCard";
 import { EventsCard } from "./components/EventsCard";
 import { ResultsChart } from "./components/ResultsChart";
@@ -121,6 +122,17 @@ function App() {
 
   const setEvents = (events: ScheduledEvent[]) => patch({ events });
   const setIncomeSources = (incomeSources: IncomeSource[]) => patch({ incomeSources });
+  const pushFreeCashFlow = (monthlyAmount: number) => {
+    const newEvent: ScheduledEvent = {
+      id: newId(),
+      label: "Free cash flow (from budgeting)",
+      amount: monthlyAmount,
+      kind: "repayment",
+      recurrence: "monthly",
+      startDate: new Date().toISOString().slice(0, 10),
+    };
+    patch({ events: [...state.events, newEvent] });
+  };
 
   return (
     <div className="app-shell">
@@ -161,6 +173,7 @@ function App() {
             superAnnualReturnPct={state.superAnnualReturnPct}
             onChange={patch}
           />
+          <BudgetingCard onPushFreeCashFlow={pushFreeCashFlow} />
           <MortgageCard
             loanAmount={state.loanAmount}
             annualInterestRatePct={state.annualInterestRatePct}
