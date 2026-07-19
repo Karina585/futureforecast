@@ -1,5 +1,6 @@
 import type { IncomeSource, TaxYear } from "./auTax";
 import type { ScheduledEvent } from "./mortgage";
+import { DEFAULT_SG_RATE_PCT } from "./superannuation";
 
 export interface AppState {
   salary: number;
@@ -16,6 +17,12 @@ export interface AppState {
   offsetBalance: number;
 
   events: ScheduledEvent[];
+
+  superStartingBalance: number;
+  superSgRatePct: number;
+  superSalarySacrificeAnnual: number;
+  superNonConcessionalAnnual: number;
+  superAnnualReturnPct: number;
 }
 
 export const DEFAULT_STATE: AppState = {
@@ -33,6 +40,12 @@ export const DEFAULT_STATE: AppState = {
   offsetBalance: 20_000,
 
   events: [],
+
+  superStartingBalance: 50_000,
+  superSgRatePct: DEFAULT_SG_RATE_PCT,
+  superSalarySacrificeAnnual: 0,
+  superNonConcessionalAnnual: 0,
+  superAnnualReturnPct: 7,
 };
 
 export function newId(): string {

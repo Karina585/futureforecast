@@ -154,6 +154,8 @@ export interface TaxInput {
   hasPrivateHealthCover?: boolean;
   hasHelpDebt?: boolean;
   salaryPackaging?: number;
+  /** Concessional super contributions salary-sacrificed from pre-tax salary. */
+  salarySacrificeSuper?: number;
   /**
    * Net taxable income from non-salary sources (e.g. rental income minus
    * deductible expenses). Can be negative — a net rental loss (negative
@@ -182,9 +184,10 @@ export interface TaxResult {
 export function calculateAuTax(input: TaxInput): TaxResult {
   const grossIncome = Math.max(0, input.grossIncome);
   const otherTaxableIncome = input.otherTaxableIncome ?? 0;
+  const salarySacrificeSuper = input.salarySacrificeSuper ?? 0;
   const taxableIncome = Math.max(
     0,
-    grossIncome - (input.salaryPackaging ?? 0) + otherTaxableIncome
+    grossIncome - (input.salaryPackaging ?? 0) - salarySacrificeSuper + otherTaxableIncome
   );
   const brackets = bracketsFor(input.taxYear);
 
@@ -199,7 +202,7 @@ export function calculateAuTax(input: TaxInput): TaxResult {
   const help = input.hasHelpDebt ? helpRepayment(taxableIncome) : 0;
 
   const totalTax = incomeTax + levy + surcharge + help;
-  const netIncome = grossIncome + otherTaxableIncome - totalTax;
+  const netIncome = grossIncome + otherTaxableIncome - totalTax - salarySacrificeSuper;
 
   const marginalBracket = [...brackets].reverse().find((b) => taxableIncome > b.min);
 

@@ -5,6 +5,7 @@ import { DEFAULT_STATE, type AppState } from "./lib/appState";
 import { loadState, saveState } from "./lib/storage";
 import { TaxCard } from "./components/TaxCard";
 import { IncomeSourcesCard } from "./components/IncomeSourcesCard";
+import { SuperCard } from "./components/SuperCard";
 import { MortgageCard } from "./components/MortgageCard";
 import { EventsCard } from "./components/EventsCard";
 import { ResultsChart } from "./components/ResultsChart";
@@ -28,6 +29,7 @@ function App() {
         hasPrivateHealthCover: state.hasPrivateHealthCover,
         hasHelpDebt: state.hasHelpDebt,
         salaryPackaging: state.salaryPackaging,
+        salarySacrificeSuper: state.superSalarySacrificeAnnual,
         otherTaxableIncome: netIncomeSourcesTotal(state.incomeSources),
       }),
     [
@@ -36,6 +38,7 @@ function App() {
       state.hasPrivateHealthCover,
       state.hasHelpDebt,
       state.salaryPackaging,
+      state.superSalarySacrificeAnnual,
       state.incomeSources,
     ]
   );
@@ -119,6 +122,16 @@ function App() {
             onChange={patch}
           />
           <IncomeSourcesCard sources={state.incomeSources} onChange={setIncomeSources} />
+          <SuperCard
+            salary={state.salary}
+            startDate={state.startDate}
+            superStartingBalance={state.superStartingBalance}
+            superSgRatePct={state.superSgRatePct}
+            superSalarySacrificeAnnual={state.superSalarySacrificeAnnual}
+            superNonConcessionalAnnual={state.superNonConcessionalAnnual}
+            superAnnualReturnPct={state.superAnnualReturnPct}
+            onChange={patch}
+          />
           <MortgageCard
             loanAmount={state.loanAmount}
             annualInterestRatePct={state.annualInterestRatePct}

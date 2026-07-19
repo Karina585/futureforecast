@@ -66,6 +66,21 @@ describe("calculateAuTax", () => {
     expect(result.taxableIncome).toBe(80_000);
   });
 
+  it("reduces taxable income and take-home pay by super salary sacrifice", () => {
+    const result = calculateAuTax({
+      grossIncome: 90_000,
+      taxYear: "2024-25",
+      salarySacrificeSuper: 10_000,
+    });
+    const baseline = calculateAuTax({ grossIncome: 90_000, taxYear: "2024-25" });
+    expect(result.taxableIncome).toBe(80_000);
+    // Sacrificed money doesn't reach the household as cash, unlike salary
+    // packaging — net income drops, but not by the full $10k since it also
+    // saves some tax.
+    expect(result.netIncome).toBeLessThan(baseline.netIncome);
+    expect(result.netIncome).toBeGreaterThan(baseline.netIncome - 10_000);
+  });
+
   it("computes net pay period breakdowns", () => {
     const result = calculateAuTax({ grossIncome: 104_000, taxYear: "2024-25" });
     expect(result.netWeekly * 52).toBeCloseTo(result.netIncome, 6);
