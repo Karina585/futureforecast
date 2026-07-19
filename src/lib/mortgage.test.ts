@@ -105,6 +105,31 @@ describe("simulateMortgage", () => {
     expect(point6.offsetBalance).toBeCloseTo(500 * 6, 0);
   });
 
+  it("applies recurring quarterly extra repayments every 3 months", () => {
+    const result = simulateMortgage({
+      loanAmount: 400_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(400_000, 6, 360),
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      events: [
+        {
+          id: "e1",
+          label: "Quarterly bonus",
+          amount: 1000,
+          kind: "repayment",
+          recurrence: "quarterly",
+          startDate: "2026-01-01",
+        },
+      ],
+      maxMonths: 12,
+    });
+    // Occurrences land at month 3, 6, 9, 12 (Jan 1 start, every 3 months).
+    expect(result.points[3].offsetBalance).toBeCloseTo(1000, 0);
+    expect(result.points[6].offsetBalance).toBeCloseTo(2000, 0);
+    expect(result.points[12].offsetBalance).toBeCloseTo(4000, 0);
+  });
+
   it("reduces the offset balance on a redraw", () => {
     const result = simulateMortgage({
       loanAmount: 400_000,

@@ -7,7 +7,12 @@
 // redraws decrease it. The loan is paid off when its balance reaches zero,
 // which can happen well before the original term if the offset grows.
 
-export type RecurrenceFrequency = "weekly" | "fortnightly" | "monthly" | "yearly";
+export type RecurrenceFrequency =
+  | "weekly"
+  | "fortnightly"
+  | "monthly"
+  | "quarterly"
+  | "yearly";
 
 export interface ScheduledEvent {
   id: string;
@@ -77,13 +82,21 @@ function occurrencesInPeriod(
     weekly: 7,
     fortnightly: 14,
     monthly: 0, // handled by month arithmetic
+    quarterly: 0, // handled by month arithmetic
     yearly: 0, // handled by year arithmetic
   };
 
+  const monthlyRecurrences: RecurrenceFrequency[] = ["monthly", "quarterly", "yearly"];
+  const monthSteps: Partial<Record<RecurrenceFrequency, number>> = {
+    monthly: 1,
+    quarterly: 3,
+    yearly: 12,
+  };
+
   let count = 0;
-  if (event.recurrence === "monthly" || event.recurrence === "yearly") {
+  if (monthlyRecurrences.includes(event.recurrence as RecurrenceFrequency)) {
     const cursor = new Date(start);
-    const monthStep = event.recurrence === "monthly" ? 1 : 12;
+    const monthStep = monthSteps[event.recurrence as RecurrenceFrequency]!;
     // Fast-forward cursor to at or after periodStart without an unbounded loop.
     if (cursor < periodStart) {
       const monthsBetween =

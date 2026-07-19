@@ -11,6 +11,7 @@ const RECURRENCE_OPTIONS: { value: ScheduledEvent["recurrence"]; label: string }
   { value: "weekly", label: "Weekly" },
   { value: "fortnightly", label: "Fortnightly" },
   { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
   { value: "yearly", label: "Yearly" },
 ];
 
