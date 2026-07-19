@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateAuTax } from "./auTax";
+import { calculateAuTax, netIncomeSourcesTotal } from "./auTax";
 
 describe("calculateAuTax", () => {
   it("charges no tax below the tax-free threshold", () => {
@@ -71,5 +71,38 @@ describe("calculateAuTax", () => {
     expect(result.netWeekly * 52).toBeCloseTo(result.netIncome, 6);
     expect(result.netFortnightly * 26).toBeCloseTo(result.netIncome, 6);
     expect(result.netMonthly * 12).toBeCloseTo(result.netIncome, 6);
+  });
+
+  it("adds net rental income to taxable income and net income", () => {
+    const withRental = calculateAuTax({
+      grossIncome: 100_000,
+      taxYear: "2024-25",
+      otherTaxableIncome: 12_000,
+    });
+    const withoutRental = calculateAuTax({ grossIncome: 100_000, taxYear: "2024-25" });
+    expect(withRental.taxableIncome).toBe(112_000);
+    expect(withRental.totalTax).toBeGreaterThan(withoutRental.totalTax);
+    expect(withRental.netIncome).toBeGreaterThan(withoutRental.netIncome);
+  });
+
+  it("lets a net rental loss (negative gearing) reduce taxable income", () => {
+    const withLoss = calculateAuTax({
+      grossIncome: 100_000,
+      taxYear: "2024-25",
+      otherTaxableIncome: -8_000,
+    });
+    const withoutLoss = calculateAuTax({ grossIncome: 100_000, taxYear: "2024-25" });
+    expect(withLoss.taxableIncome).toBe(92_000);
+    expect(withLoss.totalTax).toBeLessThan(withoutLoss.totalTax);
+    // The loss is still a real cash cost, so net income is lower overall.
+    expect(withLoss.netIncome).toBeLessThan(withoutLoss.netIncome);
+  });
+
+  it("sums gross minus expenses across income sources, allowing a net loss", () => {
+    const total = netIncomeSourcesTotal([
+      { id: "a", label: "Rental A", grossAnnualAmount: 20_000, deductibleExpenses: 8_000 },
+      { id: "b", label: "Rental B", grossAnnualAmount: 5_000, deductibleExpenses: 9_000 },
+    ]);
+    expect(total).toBe(20_000 - 8_000 + (5_000 - 9_000));
   });
 });

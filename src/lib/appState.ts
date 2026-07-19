@@ -1,4 +1,4 @@
-import type { TaxYear } from "./auTax";
+import type { IncomeSource, TaxYear } from "./auTax";
 import type { ScheduledEvent } from "./mortgage";
 
 export interface AppState {
@@ -7,6 +7,7 @@ export interface AppState {
   hasPrivateHealthCover: boolean;
   hasHelpDebt: boolean;
   salaryPackaging: number;
+  incomeSources: IncomeSource[];
 
   loanAmount: number;
   annualInterestRatePct: number;
@@ -23,6 +24,7 @@ export const DEFAULT_STATE: AppState = {
   hasPrivateHealthCover: true,
   hasHelpDebt: false,
   salaryPackaging: 0,
+  incomeSources: [],
 
   loanAmount: 500_000,
   annualInterestRatePct: 6,
@@ -33,6 +35,6 @@ export const DEFAULT_STATE: AppState = {
   events: [],
 };
 
-export function newEventId(): string {
+export function newId(): string {
   return Math.random().toString(36).slice(2, 10);
 }

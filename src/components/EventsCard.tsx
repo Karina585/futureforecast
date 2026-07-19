@@ -1,5 +1,5 @@
 import type { ScheduledEvent } from "../lib/mortgage";
-import { newEventId } from "../lib/appState";
+import { newId } from "../lib/appState";
 import { NumberField } from "./NumberField";
 
 interface Props {
@@ -18,7 +18,7 @@ const RECURRENCE_OPTIONS: { value: ScheduledEvent["recurrence"]; label: string }
 
 function makeEvent(kind: ScheduledEvent["kind"]): ScheduledEvent {
   return {
-    id: newEventId(),
+    id: newId(),
     label: kind === "repayment" ? "Extra repayment" : "Redraw",
     amount: kind === "repayment" ? 500 : 5000,
     kind,

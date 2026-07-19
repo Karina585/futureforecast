@@ -135,12 +135,31 @@ function helpRepayment(income: number): number {
   return bracket ? income * bracket.rate : 0;
 }
 
+export interface IncomeSource {
+  id: string;
+  label: string;
+  grossAnnualAmount: number;
+  /** Deductible expenses against this source (e.g. rental property costs, interest, agent fees). */
+  deductibleExpenses: number;
+}
+
+/** Net taxable contribution across all non-salary income sources. Can be negative (negative gearing). */
+export function netIncomeSourcesTotal(sources: IncomeSource[]): number {
+  return sources.reduce((sum, s) => sum + (s.grossAnnualAmount - s.deductibleExpenses), 0);
+}
+
 export interface TaxInput {
   grossIncome: number;
   taxYear: TaxYear;
   hasPrivateHealthCover?: boolean;
   hasHelpDebt?: boolean;
   salaryPackaging?: number;
+  /**
+   * Net taxable income from non-salary sources (e.g. rental income minus
+   * deductible expenses). Can be negative — a net rental loss (negative
+   * gearing) reduces taxable income just as it would on a real return.
+   */
+  otherTaxableIncome?: number;
 }
 
 export interface TaxResult {
@@ -162,7 +181,11 @@ export interface TaxResult {
 
 export function calculateAuTax(input: TaxInput): TaxResult {
   const grossIncome = Math.max(0, input.grossIncome);
-  const taxableIncome = Math.max(0, grossIncome - (input.salaryPackaging ?? 0));
+  const otherTaxableIncome = input.otherTaxableIncome ?? 0;
+  const taxableIncome = Math.max(
+    0,
+    grossIncome - (input.salaryPackaging ?? 0) + otherTaxableIncome
+  );
   const brackets = bracketsFor(input.taxYear);
 
   const grossTax = taxOnBrackets(taxableIncome, brackets);
@@ -176,7 +199,7 @@ export function calculateAuTax(input: TaxInput): TaxResult {
   const help = input.hasHelpDebt ? helpRepayment(taxableIncome) : 0;
 
   const totalTax = incomeTax + levy + surcharge + help;
-  const netIncome = grossIncome - totalTax;
+  const netIncome = grossIncome + otherTaxableIncome - totalTax;
 
   const marginalBracket = [...brackets].reverse().find((b) => taxableIncome > b.min);
 
@@ -193,7 +216,10 @@ export function calculateAuTax(input: TaxInput): TaxResult {
     netMonthly: netIncome / 12,
     netFortnightly: netIncome / 26,
     netWeekly: netIncome / 52,
-    effectiveTaxRate: grossIncome > 0 ? totalTax / grossIncome : 0,
+    effectiveTaxRate:
+      grossIncome + otherTaxableIncome > 0
+        ? totalTax / (grossIncome + otherTaxableIncome)
+        : 0,
     marginalTaxRate: (marginalBracket?.rate ?? 0) + MEDICARE_RATE,
   };
 }

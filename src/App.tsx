@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { calculateAuTax } from "./lib/auTax";
+import { calculateAuTax, netIncomeSourcesTotal, type IncomeSource } from "./lib/auTax";
 import { simulateMortgage, type ScheduledEvent } from "./lib/mortgage";
 import { DEFAULT_STATE, type AppState } from "./lib/appState";
 import { loadState, saveState } from "./lib/storage";
 import { TaxCard } from "./components/TaxCard";
+import { IncomeSourcesCard } from "./components/IncomeSourcesCard";
 import { MortgageCard } from "./components/MortgageCard";
 import { EventsCard } from "./components/EventsCard";
 import { ResultsChart } from "./components/ResultsChart";
@@ -27,6 +28,7 @@ function App() {
         hasPrivateHealthCover: state.hasPrivateHealthCover,
         hasHelpDebt: state.hasHelpDebt,
         salaryPackaging: state.salaryPackaging,
+        otherTaxableIncome: netIncomeSourcesTotal(state.incomeSources),
       }),
     [
       state.salary,
@@ -34,6 +36,7 @@ function App() {
       state.hasPrivateHealthCover,
       state.hasHelpDebt,
       state.salaryPackaging,
+      state.incomeSources,
     ]
   );
 
@@ -95,6 +98,7 @@ function App() {
   );
 
   const setEvents = (events: ScheduledEvent[]) => patch({ events });
+  const setIncomeSources = (incomeSources: IncomeSource[]) => patch({ incomeSources });
 
   return (
     <div className="app-shell">
@@ -114,6 +118,7 @@ function App() {
             result={taxResult}
             onChange={patch}
           />
+          <IncomeSourcesCard sources={state.incomeSources} onChange={setIncomeSources} />
           <MortgageCard
             loanAmount={state.loanAmount}
             annualInterestRatePct={state.annualInterestRatePct}
