@@ -23,6 +23,12 @@ export interface AppState {
   superSalarySacrificeAnnual: number;
   superNonConcessionalAnnual: number;
   superAnnualReturnPct: number;
+
+  hasPartner: boolean;
+  partnerSalary: number;
+  partnerHasPrivateHealthCover: boolean;
+  partnerHasHelpDebt: boolean;
+  partnerSalaryPackaging: number;
 }
 
 export const DEFAULT_STATE: AppState = {
@@ -46,6 +52,12 @@ export const DEFAULT_STATE: AppState = {
   superSalarySacrificeAnnual: 0,
   superNonConcessionalAnnual: 0,
   superAnnualReturnPct: 7,
+
+  hasPartner: false,
+  partnerSalary: 80_000,
+  partnerHasPrivateHealthCover: true,
+  partnerHasHelpDebt: false,
+  partnerSalaryPackaging: 0,
 };
 
 export function newId(): string {

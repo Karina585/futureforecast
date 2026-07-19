@@ -4,6 +4,7 @@ import { simulateMortgage, type ScheduledEvent } from "./lib/mortgage";
 import { DEFAULT_STATE, type AppState } from "./lib/appState";
 import { loadState, saveState } from "./lib/storage";
 import { TaxCard } from "./components/TaxCard";
+import { PartnerCard } from "./components/PartnerCard";
 import { IncomeSourcesCard } from "./components/IncomeSourcesCard";
 import { SuperCard } from "./components/SuperCard";
 import { MortgageCard } from "./components/MortgageCard";
@@ -40,6 +41,24 @@ function App() {
       state.salaryPackaging,
       state.superSalarySacrificeAnnual,
       state.incomeSources,
+    ]
+  );
+
+  const partnerTaxResult = useMemo(
+    () =>
+      calculateAuTax({
+        grossIncome: state.partnerSalary,
+        taxYear: state.taxYear,
+        hasPrivateHealthCover: state.partnerHasPrivateHealthCover,
+        hasHelpDebt: state.partnerHasHelpDebt,
+        salaryPackaging: state.partnerSalaryPackaging,
+      }),
+    [
+      state.partnerSalary,
+      state.taxYear,
+      state.partnerHasPrivateHealthCover,
+      state.partnerHasHelpDebt,
+      state.partnerSalaryPackaging,
     ]
   );
 
@@ -119,6 +138,16 @@ function App() {
             hasHelpDebt={state.hasHelpDebt}
             salaryPackaging={state.salaryPackaging}
             result={taxResult}
+            onChange={patch}
+          />
+          <PartnerCard
+            hasPartner={state.hasPartner}
+            partnerSalary={state.partnerSalary}
+            partnerHasPrivateHealthCover={state.partnerHasPrivateHealthCover}
+            partnerHasHelpDebt={state.partnerHasHelpDebt}
+            partnerSalaryPackaging={state.partnerSalaryPackaging}
+            primaryResult={taxResult}
+            partnerResult={partnerTaxResult}
             onChange={patch}
           />
           <IncomeSourcesCard sources={state.incomeSources} onChange={setIncomeSources} />
