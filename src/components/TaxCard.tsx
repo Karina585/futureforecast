@@ -1,6 +1,7 @@
 import type { TaxResult, TaxYear } from "../lib/auTax";
 import { TAX_YEARS } from "../lib/auTax";
 import { formatCurrency, formatPercent } from "../lib/format";
+import { NumberField } from "./NumberField";
 
 interface Props {
   salary: number;
@@ -33,12 +34,11 @@ export function TaxCard({
       <div className="field-grid">
         <label className="field">
           <span>Gross annual salary</span>
-          <input
-            type="number"
+          <NumberField
             min={0}
             step={1000}
             value={salary}
-            onChange={(e) => onChange({ salary: Number(e.target.value) })}
+            onChange={(v) => onChange({ salary: v })}
           />
         </label>
         <label className="field">
@@ -56,12 +56,11 @@ export function TaxCard({
         </label>
         <label className="field">
           <span>Salary packaging / pre-tax deductions</span>
-          <input
-            type="number"
+          <NumberField
             min={0}
             step={100}
             value={salaryPackaging}
-            onChange={(e) => onChange({ salaryPackaging: Number(e.target.value) })}
+            onChange={(v) => onChange({ salaryPackaging: v })}
           />
         </label>
         <label className="field checkbox">

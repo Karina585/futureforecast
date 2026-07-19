@@ -2,16 +2,25 @@ import type { MortgageResult } from "../lib/mortgage";
 import { formatCurrency, formatDate, formatMonthsAsYears } from "../lib/format";
 
 interface Props {
+  /** Actual forecast: real offset balance plus your scheduled events. */
   withExtras: MortgageResult;
-  baseline: MortgageResult;
+  /** Real offset balance, but no scheduled extra repayments/redraws. */
+  offsetOnly: MortgageResult;
+  /** No offset balance and no scheduled events — a plain vanilla loan. */
+  noOffset: MortgageResult;
 }
 
-export function SummaryCards({ withExtras, baseline }: Props) {
-  const monthsSaved =
-    baseline.payoffMonthIndex !== null && withExtras.payoffMonthIndex !== null
-      ? baseline.payoffMonthIndex - withExtras.payoffMonthIndex
-      : null;
-  const interestSaved = baseline.totalInterestPaid - withExtras.totalInterestPaid;
+function monthsSaved(from: MortgageResult, to: MortgageResult): number | null {
+  return from.payoffMonthIndex !== null && to.payoffMonthIndex !== null
+    ? from.payoffMonthIndex - to.payoffMonthIndex
+    : null;
+}
+
+export function SummaryCards({ withExtras, offsetOnly, noOffset }: Props) {
+  const offsetMonths = monthsSaved(noOffset, offsetOnly);
+  const extrasMonths = monthsSaved(offsetOnly, withExtras);
+  const offsetInterest = noOffset.totalInterestPaid - offsetOnly.totalInterestPaid;
+  const extrasInterest = offsetOnly.totalInterestPaid - withExtras.totalInterestPaid;
 
   return (
     <div className="stat-grid">
@@ -30,16 +39,18 @@ export function SummaryCards({ withExtras, baseline }: Props) {
         <span className="stat-label">Total interest paid</span>
         <span className="stat-value">{formatCurrency(withExtras.totalInterestPaid)}</span>
       </div>
-      {monthsSaved !== null && monthsSaved > 0 && (
+      {offsetMonths !== null && offsetMonths > 0 && (
         <div className="stat-tile stat-tile--good">
-          <span className="stat-label">Time saved vs. no extra repayments</span>
-          <span className="stat-value">{formatMonthsAsYears(monthsSaved)}</span>
+          <span className="stat-label">Saved by your offset account</span>
+          <span className="stat-value">{formatMonthsAsYears(offsetMonths)}</span>
+          <span className="stat-sub">{formatCurrency(offsetInterest)} interest</span>
         </div>
       )}
-      {interestSaved > 0 && (
+      {extrasMonths !== null && extrasMonths > 0 && (
         <div className="stat-tile stat-tile--good">
-          <span className="stat-label">Interest saved vs. no extra repayments</span>
-          <span className="stat-value">{formatCurrency(interestSaved)}</span>
+          <span className="stat-label">Saved by extra repayments/redraws</span>
+          <span className="stat-value">{formatMonthsAsYears(extrasMonths)}</span>
+          <span className="stat-sub">{formatCurrency(extrasInterest)} interest</span>
         </div>
       )}
     </div>

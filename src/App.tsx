@@ -57,7 +57,7 @@ function App() {
     ]
   );
 
-  const baselineResult = useMemo(
+  const offsetOnlyResult = useMemo(
     () =>
       simulateMortgage({
         loanAmount: state.loanAmount,
@@ -73,6 +73,24 @@ function App() {
       state.monthlyRepayment,
       state.startDate,
       state.offsetBalance,
+    ]
+  );
+
+  const noOffsetResult = useMemo(
+    () =>
+      simulateMortgage({
+        loanAmount: state.loanAmount,
+        annualInterestRatePct: state.annualInterestRatePct,
+        monthlyRepayment: state.monthlyRepayment,
+        startDate: state.startDate,
+        offsetBalance: 0,
+        events: [],
+      }),
+    [
+      state.loanAmount,
+      state.annualInterestRatePct,
+      state.monthlyRepayment,
+      state.startDate,
     ]
   );
 
@@ -110,7 +128,11 @@ function App() {
         <div className="app-column">
           <section className="card">
             <h2>Loan &amp; offset forecast</h2>
-            <SummaryCards withExtras={mortgageResult} baseline={baselineResult} />
+            <SummaryCards
+              withExtras={mortgageResult}
+              offsetOnly={offsetOnlyResult}
+              noOffset={noOffsetResult}
+            />
             <ResultsChart
               points={mortgageResult.points}
               payoffMonthIndex={mortgageResult.payoffMonthIndex}

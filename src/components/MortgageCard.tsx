@@ -1,5 +1,6 @@
 import { requiredRepayment } from "../lib/mortgage";
 import { formatCurrency } from "../lib/format";
+import { NumberField } from "./NumberField";
 
 interface Props {
   loanAmount: number;
@@ -30,34 +31,29 @@ export function MortgageCard({
       <div className="field-grid">
         <label className="field">
           <span>Loan amount</span>
-          <input
-            type="number"
+          <NumberField
             min={0}
             step={1000}
             value={loanAmount}
-            onChange={(e) => onChange({ loanAmount: Number(e.target.value) })}
+            onChange={(v) => onChange({ loanAmount: v })}
           />
         </label>
         <label className="field">
           <span>Interest rate (% p.a.)</span>
-          <input
-            type="number"
+          <NumberField
             min={0}
             step={0.05}
             value={annualInterestRatePct}
-            onChange={(e) =>
-              onChange({ annualInterestRatePct: Number(e.target.value) })
-            }
+            onChange={(v) => onChange({ annualInterestRatePct: v })}
           />
         </label>
         <label className="field">
           <span>Monthly repayment</span>
-          <input
-            type="number"
+          <NumberField
             min={0}
             step={50}
             value={monthlyRepayment}
-            onChange={(e) => onChange({ monthlyRepayment: Number(e.target.value) })}
+            onChange={(v) => onChange({ monthlyRepayment: v })}
           />
         </label>
         <label className="field">
@@ -70,15 +66,20 @@ export function MortgageCard({
         </label>
         <label className="field">
           <span>Offset account balance (today)</span>
-          <input
-            type="number"
+          <NumberField
             min={0}
             step={500}
             value={offsetBalance}
-            onChange={(e) => onChange({ offsetBalance: Number(e.target.value) })}
+            onChange={(v) => onChange({ offsetBalance: v })}
           />
         </label>
       </div>
+      <p className="hint">
+        Your monthly repayment is taken as given, not derived from the start
+        date — the start date is only used to place the forecast on a real
+        calendar, so scheduled extra repayments/redraws (e.g. "every March 1")
+        land in the right month on the chart.
+      </p>
 
       <div className="quick-calc">
         {[25, 30].map((years) => {

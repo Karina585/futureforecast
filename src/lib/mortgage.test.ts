@@ -130,6 +130,53 @@ describe("simulateMortgage", () => {
     expect(result.points[12].offsetBalance).toBeCloseTo(4000, 0);
   });
 
+  it("sweeps only what a linked contribution accumulated since the last redraw", () => {
+    // Models paying quarterly RSU tax set-asides into the offset, then
+    // sweeping whatever's built up to the ATO on an ad-hoc schedule.
+    const result = simulateMortgage({
+      loanAmount: 400_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(400_000, 6, 360),
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      events: [
+        {
+          id: "rsu-contrib",
+          label: "RSU tax set-aside",
+          amount: 1000,
+          kind: "repayment",
+          recurrence: "quarterly",
+          startDate: "2026-01-01",
+        },
+        {
+          id: "sweep-1",
+          label: "Pay ATO",
+          amount: 0, // ignored: amount is auto-computed from the linked pool
+          kind: "redraw",
+          recurrence: "once",
+          startDate: "2026-08-15",
+          linkedEventId: "rsu-contrib",
+        },
+        {
+          id: "sweep-2",
+          label: "Pay ATO",
+          amount: 0,
+          kind: "redraw",
+          recurrence: "once",
+          startDate: "2026-11-15",
+          linkedEventId: "rsu-contrib",
+        },
+      ],
+      maxMonths: 12,
+    });
+
+    // By month 8 (Aug), only the Apr and Jul contributions have landed.
+    expect(result.points[8].extraOut).toBeCloseTo(2000, 0);
+    // By month 11 (Nov), only the Oct contribution has landed since the
+    // first sweep reset the pool — not the Apr/Jul amounts again.
+    expect(result.points[11].extraOut).toBeCloseTo(1000, 0);
+  });
+
   it("reduces the offset balance on a redraw", () => {
     const result = simulateMortgage({
       loanAmount: 400_000,

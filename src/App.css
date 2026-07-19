@@ -188,6 +188,13 @@ body {
   margin: 0 0 12px;
 }
 
+.field-note {
+  font-size: 0.85rem;
+  color: var(--muted-ink);
+  font-style: italic;
+  padding: 8px 0;
+}
+
 .quick-calc {
   display: flex;
   gap: 10px;

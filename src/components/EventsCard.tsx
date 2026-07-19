@@ -1,5 +1,6 @@
 import type { ScheduledEvent } from "../lib/mortgage";
 import { newEventId } from "../lib/appState";
+import { NumberField } from "./NumberField";
 
 interface Props {
   events: ScheduledEvent[];
@@ -28,9 +29,24 @@ function makeEvent(kind: ScheduledEvent["kind"]): ScheduledEvent {
 
 export function EventsCard({ events, onChange }: Props) {
   const update = (id: string, patch: Partial<ScheduledEvent>) => {
-    onChange(events.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+    onChange(
+      events.map((e) => {
+        if (e.id === id) return { ...e, ...patch };
+        // If the event being updated stops being a repayment, drop any
+        // redraw that was linked to it as a contribution source.
+        if (patch.kind && patch.kind !== "repayment" && e.linkedEventId === id) {
+          return { ...e, linkedEventId: undefined };
+        }
+        return e;
+      })
+    );
   };
-  const remove = (id: string) => onChange(events.filter((e) => e.id !== id));
+  const remove = (id: string) =>
+    onChange(
+      events
+        .filter((e) => e.id !== id)
+        .map((e) => (e.linkedEventId === id ? { ...e, linkedEventId: undefined } : e))
+    );
   const add = (kind: ScheduledEvent["kind"]) => onChange([...events, makeEvent(kind)]);
 
   return (
@@ -38,7 +54,11 @@ export function EventsCard({ events, onChange }: Props) {
       <h2>Extra repayments &amp; redraws</h2>
       <p className="hint">
         Extra repayments top up your offset account; redraws pull money back out.
-        Both can be one-off or on a recurring schedule.
+        Both can be one-off or on a recurring schedule. A redraw can also link
+        to a recurring repayment — e.g. quarterly RSU tax set-asides swept out
+        once a year to pay the ATO — in which case it automatically withdraws
+        whatever that repayment has contributed since the last withdrawal,
+        instead of a fixed amount.
       </p>
 
       {events.length === 0 && <p className="hint">No extra repayments or redraws yet.</p>}
@@ -67,16 +87,44 @@ export function EventsCard({ events, onChange }: Props) {
                   <option value="redraw">Redraw (out of offset)</option>
                 </select>
               </label>
-              <label className="field">
-                <span>Amount</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={50}
-                  value={event.amount}
-                  onChange={(e) => update(event.id, { amount: Number(e.target.value) })}
-                />
-              </label>
+              {event.kind === "redraw" && event.linkedEventId ? (
+                <div className="field">
+                  <span>Amount</span>
+                  <span className="field-note">
+                    Auto — sweeps whatever has accumulated
+                  </span>
+                </div>
+              ) : (
+                <label className="field">
+                  <span>Amount</span>
+                  <NumberField
+                    min={0}
+                    step={50}
+                    value={event.amount}
+                    onChange={(v) => update(event.id, { amount: v })}
+                  />
+                </label>
+              )}
+              {event.kind === "redraw" && (
+                <label className="field">
+                  <span>Link to contribution (optional)</span>
+                  <select
+                    value={event.linkedEventId ?? ""}
+                    onChange={(e) =>
+                      update(event.id, { linkedEventId: e.target.value || undefined })
+                    }
+                  >
+                    <option value="">None (fixed amount)</option>
+                    {events
+                      .filter((e) => e.kind === "repayment" && e.id !== event.id)
+                      .map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.label}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              )}
               <label className="field">
                 <span>Frequency</span>
                 <select

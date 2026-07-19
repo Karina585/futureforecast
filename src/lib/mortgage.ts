@@ -22,6 +22,14 @@ export interface ScheduledEvent {
   recurrence: "once" | RecurrenceFrequency;
   startDate: string; // ISO date
   endDate?: string; // ISO date, only for recurring events
+  /**
+   * Only meaningful when kind is "redraw": the id of a "repayment" event to
+   * sweep from instead of using `amount`. Each time this redraw fires it
+   * withdraws everything the linked event has contributed since the last
+   * withdrawal (e.g. quarterly RSU tax set-asides swept out annually to pay
+   * the ATO) and resets that pool to zero.
+   */
+  linkedEventId?: string;
 }
 
 export interface MortgageInput {
@@ -140,6 +148,13 @@ export function simulateMortgage(input: MortgageInput): MortgageResult {
   let payoffMonthIndex: number | null = null;
   let totalInterestPaid = 0;
 
+  // Tracks how much each "repayment" event has contributed since it was
+  // last swept by a linked redraw.
+  const contributionPools: Record<string, number> = {};
+  for (const event of input.events) {
+    if (event.kind === "repayment") contributionPools[event.id] = 0;
+  }
+
   points.push({
     monthIndex: 0,
     date: isoDate(startDate),
@@ -158,12 +173,29 @@ export function simulateMortgage(input: MortgageInput): MortgageResult {
 
     let extraIn = 0;
     let extraOut = 0;
+
+    // Contributions first, so a linked redraw in the same period sees them.
     for (const event of input.events) {
+      if (event.kind !== "repayment") continue;
       const occurrences = occurrencesInPeriod(event, periodStart, periodEnd);
       if (occurrences === 0) continue;
       const total = occurrences * event.amount;
-      if (event.kind === "repayment") extraIn += total;
-      else extraOut += total;
+      extraIn += total;
+      contributionPools[event.id] = (contributionPools[event.id] ?? 0) + total;
+    }
+
+    // Then redraws, which may sweep a linked contribution pool instead of
+    // using their own fixed amount.
+    for (const event of input.events) {
+      if (event.kind !== "redraw") continue;
+      const occurrences = occurrencesInPeriod(event, periodStart, periodEnd);
+      if (occurrences === 0) continue;
+      if (event.linkedEventId) {
+        extraOut += contributionPools[event.linkedEventId] ?? 0;
+        contributionPools[event.linkedEventId] = 0;
+      } else {
+        extraOut += occurrences * event.amount;
+      }
     }
 
     offsetBalance = Math.max(0, offsetBalance + extraIn - extraOut);
