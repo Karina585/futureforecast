@@ -10,34 +10,34 @@ describe("requiredRepayment", () => {
 });
 
 describe("simulateMortgage", () => {
-  it("tracks net worth as offset balance minus loan balance, unbounded", () => {
-    const result = simulateMortgage({
-      loanAmount: 400_000,
-      annualInterestRatePct: 6,
-      monthlyRepayment: requiredRepayment(400_000, 6, 360),
-      startDate: "2026-01-01",
-      offsetBalance: 10_000,
-      events: [],
-      maxMonths: 12,
-    });
-    // Starts deeply negative (owe far more than the offset holds)...
-    expect(result.points[0].netWorth).toBeCloseTo(10_000 - 400_000, 0);
-    // ...and net worth should be rising each month as the loan amortizes.
-    expect(result.points[6].netWorth).toBeGreaterThan(result.points[0].netWorth);
-  });
-
-  it("lets net worth go positive once the offset exceeds the loan balance", () => {
+  it("keeps running past payoff, holding the loan at zero", () => {
+    // A big offset pays this off almost immediately relative to maxMonths.
     const result = simulateMortgage({
       loanAmount: 10_000,
       annualInterestRatePct: 6,
       monthlyRepayment: requiredRepayment(10_000, 6, 24),
       startDate: "2026-01-01",
       offsetBalance: 50_000,
-      events: [],
-      maxMonths: 3,
+      events: [
+        {
+          id: "e1",
+          label: "Ongoing savings",
+          amount: 500,
+          kind: "repayment",
+          recurrence: "monthly",
+          startDate: "2026-01-01",
+        },
+      ],
+      maxMonths: 24,
     });
-    expect(result.points[0].netWorth).toBeCloseTo(50_000 - 10_000, 0);
-    expect(result.points[0].netWorth).toBeGreaterThan(0);
+    expect(result.points).toHaveLength(25);
+    expect(result.payoffMonthIndex).not.toBeNull();
+    expect(result.payoffMonthIndex!).toBeLessThan(24);
+    // Loan stays at zero post-payoff, but the offset keeps growing from the
+    // still-scheduled monthly contribution instead of the series just stopping.
+    const last = result.points[result.points.length - 1];
+    expect(last.loanBalance).toBe(0);
+    expect(last.offsetBalance).toBeGreaterThan(result.points[result.payoffMonthIndex!].offsetBalance);
   });
 
   it("pays off a plain loan around its calculated term with no offset/extras", () => {

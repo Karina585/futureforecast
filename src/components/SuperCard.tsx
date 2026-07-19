@@ -2,19 +2,18 @@ import {
   CONCESSIONAL_CAP,
   NON_CONCESSIONAL_CAP,
   balanceAtYears,
-  simulateSuper,
+  type SuperResult,
 } from "../lib/superannuation";
 import { formatCurrency } from "../lib/format";
 import { NumberField } from "./NumberField";
 
 interface Props {
-  salary: number;
-  startDate: string;
   superStartingBalance: number;
   superSgRatePct: number;
   superSalarySacrificeAnnual: number;
   superNonConcessionalAnnual: number;
   superAnnualReturnPct: number;
+  result: SuperResult;
   onChange: (patch: Partial<{
     superStartingBalance: number;
     superSgRatePct: number;
@@ -25,25 +24,14 @@ interface Props {
 }
 
 export function SuperCard({
-  salary,
-  startDate,
   superStartingBalance,
   superSgRatePct,
   superSalarySacrificeAnnual,
   superNonConcessionalAnnual,
   superAnnualReturnPct,
+  result,
   onChange,
 }: Props) {
-  const result = simulateSuper({
-    startingBalance: superStartingBalance,
-    salary,
-    sgRatePct: superSgRatePct,
-    salarySacrificeAnnual: superSalarySacrificeAnnual,
-    nonConcessionalAnnual: superNonConcessionalAnnual,
-    annualReturnPct: superAnnualReturnPct,
-    startDate,
-  });
-
   return (
     <section className="card">
       <h2>Superannuation</h2>

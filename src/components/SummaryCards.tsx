@@ -8,6 +8,10 @@ interface Props {
   offsetOnly: MortgageResult;
   /** No offset balance and no scheduled events — a plain vanilla loan. */
   noOffset: MortgageResult;
+  /** Offset + super − loan, today. */
+  netWorthToday: number;
+  /** Offset + super − loan, at the end of the forecast window. */
+  netWorthAtEnd: number;
 }
 
 function monthsSaved(from: MortgageResult, to: MortgageResult): number | null {
@@ -16,14 +20,17 @@ function monthsSaved(from: MortgageResult, to: MortgageResult): number | null {
     : null;
 }
 
-export function SummaryCards({ withExtras, offsetOnly, noOffset }: Props) {
+export function SummaryCards({
+  withExtras,
+  offsetOnly,
+  noOffset,
+  netWorthToday,
+  netWorthAtEnd,
+}: Props) {
   const offsetMonths = monthsSaved(noOffset, offsetOnly);
   const extrasMonths = monthsSaved(offsetOnly, withExtras);
   const offsetInterest = noOffset.totalInterestPaid - offsetOnly.totalInterestPaid;
   const extrasInterest = offsetOnly.totalInterestPaid - withExtras.totalInterestPaid;
-
-  const netWorthToday = withExtras.points[0]?.netWorth ?? 0;
-  const netWorthAtEnd = withExtras.points[withExtras.points.length - 1]?.netWorth ?? 0;
 
   return (
     <div className="stat-grid">
@@ -45,7 +52,7 @@ export function SummaryCards({ withExtras, offsetOnly, noOffset }: Props) {
       <div className="stat-tile">
         <span className="stat-label">Net worth today</span>
         <span className="stat-value">{formatCurrency(netWorthToday)}</span>
-        <span className="stat-sub">offset balance − loan balance</span>
+        <span className="stat-sub">offset + super − loan balance</span>
       </div>
       <div className={`stat-tile${netWorthAtEnd > 0 ? " stat-tile--good" : ""}`}>
         <span className="stat-label">Projected net worth at end of forecast</span>

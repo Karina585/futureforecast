@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { calculateAuTax, netIncomeSourcesTotal, type IncomeSource } from "./lib/auTax";
 import { simulateMortgage, type ScheduledEvent } from "./lib/mortgage";
+import { simulateSuper } from "./lib/superannuation";
+import { combineNetWorth, sampleYearly } from "./lib/netWorth";
 import { DEFAULT_STATE, newId, type AppState } from "./lib/appState";
 import { loadState, saveState } from "./lib/storage";
 import { TaxCard } from "./components/TaxCard";
@@ -63,6 +65,28 @@ function App() {
     ]
   );
 
+  const superResult = useMemo(
+    () =>
+      simulateSuper({
+        startingBalance: state.superStartingBalance,
+        salary: state.salary,
+        sgRatePct: state.superSgRatePct,
+        salarySacrificeAnnual: state.superSalarySacrificeAnnual,
+        nonConcessionalAnnual: state.superNonConcessionalAnnual,
+        annualReturnPct: state.superAnnualReturnPct,
+        startDate: state.startDate,
+      }),
+    [
+      state.superStartingBalance,
+      state.salary,
+      state.superSgRatePct,
+      state.superSalarySacrificeAnnual,
+      state.superNonConcessionalAnnual,
+      state.superAnnualReturnPct,
+      state.startDate,
+    ]
+  );
+
   const mortgageResult = useMemo(
     () =>
       simulateMortgage({
@@ -120,6 +144,14 @@ function App() {
     ]
   );
 
+  const netWorthPoints = useMemo(
+    () => combineNetWorth(mortgageResult, superResult),
+    [mortgageResult, superResult]
+  );
+  const netWorthYearly = useMemo(() => sampleYearly(netWorthPoints), [netWorthPoints]);
+  const netWorthToday = netWorthPoints[0]?.netWorth ?? 0;
+  const netWorthAtEnd = netWorthPoints[netWorthPoints.length - 1]?.netWorth ?? 0;
+
   const setEvents = (events: ScheduledEvent[]) => patch({ events });
   const setIncomeSources = (incomeSources: IncomeSource[]) => patch({ incomeSources });
   const pushFreeCashFlow = (monthlyAmount: number) => {
@@ -164,13 +196,12 @@ function App() {
           />
           <IncomeSourcesCard sources={state.incomeSources} onChange={setIncomeSources} />
           <SuperCard
-            salary={state.salary}
-            startDate={state.startDate}
             superStartingBalance={state.superStartingBalance}
             superSgRatePct={state.superSgRatePct}
             superSalarySacrificeAnnual={state.superSalarySacrificeAnnual}
             superNonConcessionalAnnual={state.superNonConcessionalAnnual}
             superAnnualReturnPct={state.superAnnualReturnPct}
+            result={superResult}
             onChange={patch}
           />
           <BudgetingCard onPushFreeCashFlow={pushFreeCashFlow} />
@@ -192,11 +223,10 @@ function App() {
               withExtras={mortgageResult}
               offsetOnly={offsetOnlyResult}
               noOffset={noOffsetResult}
+              netWorthToday={netWorthToday}
+              netWorthAtEnd={netWorthAtEnd}
             />
-            <ResultsChart
-              points={mortgageResult.points}
-              payoffMonthIndex={mortgageResult.payoffMonthIndex}
-            />
+            <ResultsChart points={netWorthYearly} />
             <p className="disclaimer">
               Forecast only — assumes a constant interest rate and repayment
               amount over time. Real rates and repayments change; treat this as

@@ -11,6 +11,7 @@
   --success: #006300;
   --series-loan: #2a78d6;
   --series-offset: #008300;
+  --series-super: #4a3aa7;
   --series-networth: #eb6834;
 }
 
@@ -28,6 +29,7 @@
     --success: #0ca30c;
     --series-loan: #3987e5;
     --series-offset: #008300;
+    --series-super: #9085e9;
     --series-networth: #d95926;
   }
 }
@@ -45,6 +47,7 @@
   --success: #0ca30c;
   --series-loan: #3987e5;
   --series-offset: #008300;
+  --series-super: #9085e9;
   --series-networth: #d95926;
 }
 
