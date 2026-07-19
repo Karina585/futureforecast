@@ -11,7 +11,7 @@
   --success: #006300;
   --series-loan: #2a78d6;
   --series-offset: #008300;
-  --series-netdebt: #eb6834;
+  --series-networth: #eb6834;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,7 +28,7 @@
     --success: #0ca30c;
     --series-loan: #3987e5;
     --series-offset: #008300;
-    --series-netdebt: #d95926;
+    --series-networth: #d95926;
   }
 }
 
@@ -45,7 +45,7 @@
   --success: #0ca30c;
   --series-loan: #3987e5;
   --series-offset: #008300;
-  --series-netdebt: #d95926;
+  --series-networth: #d95926;
 }
 
 * {
@@ -235,7 +235,7 @@ body {
 }
 
 .event-row--redraw {
-  border-left-color: var(--series-netdebt);
+  border-left-color: var(--series-networth);
 }
 
 .event-row-grid {

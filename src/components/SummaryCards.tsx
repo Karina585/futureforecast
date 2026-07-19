@@ -22,6 +22,9 @@ export function SummaryCards({ withExtras, offsetOnly, noOffset }: Props) {
   const offsetInterest = noOffset.totalInterestPaid - offsetOnly.totalInterestPaid;
   const extrasInterest = offsetOnly.totalInterestPaid - withExtras.totalInterestPaid;
 
+  const netWorthToday = withExtras.points[0]?.netWorth ?? 0;
+  const netWorthAtEnd = withExtras.points[withExtras.points.length - 1]?.netWorth ?? 0;
+
   return (
     <div className="stat-grid">
       <div className="stat-tile">
@@ -38,6 +41,15 @@ export function SummaryCards({ withExtras, offsetOnly, noOffset }: Props) {
       <div className="stat-tile">
         <span className="stat-label">Total interest paid</span>
         <span className="stat-value">{formatCurrency(withExtras.totalInterestPaid)}</span>
+      </div>
+      <div className="stat-tile">
+        <span className="stat-label">Net worth today</span>
+        <span className="stat-value">{formatCurrency(netWorthToday)}</span>
+        <span className="stat-sub">offset balance − loan balance</span>
+      </div>
+      <div className={`stat-tile${netWorthAtEnd > 0 ? " stat-tile--good" : ""}`}>
+        <span className="stat-label">Projected net worth at end of forecast</span>
+        <span className="stat-value">{formatCurrency(netWorthAtEnd)}</span>
       </div>
       {offsetMonths !== null && offsetMonths > 0 && (
         <div className="stat-tile stat-tile--good">

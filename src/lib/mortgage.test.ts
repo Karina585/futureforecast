@@ -10,6 +10,36 @@ describe("requiredRepayment", () => {
 });
 
 describe("simulateMortgage", () => {
+  it("tracks net worth as offset balance minus loan balance, unbounded", () => {
+    const result = simulateMortgage({
+      loanAmount: 400_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(400_000, 6, 360),
+      startDate: "2026-01-01",
+      offsetBalance: 10_000,
+      events: [],
+      maxMonths: 12,
+    });
+    // Starts deeply negative (owe far more than the offset holds)...
+    expect(result.points[0].netWorth).toBeCloseTo(10_000 - 400_000, 0);
+    // ...and net worth should be rising each month as the loan amortizes.
+    expect(result.points[6].netWorth).toBeGreaterThan(result.points[0].netWorth);
+  });
+
+  it("lets net worth go positive once the offset exceeds the loan balance", () => {
+    const result = simulateMortgage({
+      loanAmount: 10_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(10_000, 6, 24),
+      startDate: "2026-01-01",
+      offsetBalance: 50_000,
+      events: [],
+      maxMonths: 3,
+    });
+    expect(result.points[0].netWorth).toBeCloseTo(50_000 - 10_000, 0);
+    expect(result.points[0].netWorth).toBeGreaterThan(0);
+  });
+
   it("pays off a plain loan around its calculated term with no offset/extras", () => {
     const loanAmount = 500_000;
     const rate = 6;

@@ -47,7 +47,8 @@ export interface MonthPoint {
   date: string; // ISO date, first of month
   loanBalance: number;
   offsetBalance: number;
-  netDebt: number;
+  /** offsetBalance - loanBalance. Negative while still in debt, positive once the offset exceeds the loan (or after payoff). */
+  netWorth: number;
   interestCharged: number;
   principalPaid: number;
   extraIn: number;
@@ -160,7 +161,7 @@ export function simulateMortgage(input: MortgageInput): MortgageResult {
     date: isoDate(startDate),
     loanBalance,
     offsetBalance,
-    netDebt: Math.max(0, loanBalance - offsetBalance),
+    netWorth: offsetBalance - loanBalance,
     interestCharged: 0,
     principalPaid: 0,
     extraIn: 0,
@@ -213,7 +214,7 @@ export function simulateMortgage(input: MortgageInput): MortgageResult {
       date: isoDate(periodEnd),
       loanBalance,
       offsetBalance,
-      netDebt: Math.max(0, loanBalance - offsetBalance),
+      netWorth: offsetBalance - loanBalance,
       interestCharged: interest,
       principalPaid,
       extraIn,

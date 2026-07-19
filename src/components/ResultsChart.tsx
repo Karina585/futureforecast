@@ -3,6 +3,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -45,7 +46,7 @@ export function ResultsChart({ points }: Props) {
     date: p.date,
     "Loan balance": Math.round(p.loanBalance),
     "Offset balance": Math.round(p.offsetBalance),
-    "Net debt": Math.round(p.netDebt),
+    "Net worth": Math.round(p.netWorth),
   }));
 
   const tickEvery = Math.max(1, Math.floor(points.length / 8));
@@ -70,6 +71,7 @@ export function ResultsChart({ points }: Props) {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ color: "var(--secondary-ink)", fontSize: 13 }} />
+          <ReferenceLine y={0} stroke="var(--baseline)" />
           <Line
             type="monotone"
             dataKey="Loan balance"
@@ -86,8 +88,8 @@ export function ResultsChart({ points }: Props) {
           />
           <Line
             type="monotone"
-            dataKey="Net debt"
-            stroke="var(--series-netdebt)"
+            dataKey="Net worth"
+            stroke="var(--series-networth)"
             strokeWidth={2}
             strokeDasharray="5 4"
             dot={false}
