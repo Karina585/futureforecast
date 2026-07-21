@@ -15,6 +15,7 @@ export interface AppState {
   monthlyRepayment: number;
   startDate: string;
   offsetBalance: number;
+  startingSavingsBalance: number;
 
   events: ScheduledEvent[];
 
@@ -23,6 +24,9 @@ export interface AppState {
   superSalarySacrificeAnnual: number;
   superNonConcessionalAnnual: number;
   superAnnualReturnPct: number;
+
+  investmentsStartingBalance: number;
+  investmentsAnnualReturnPct: number;
 
   hasPartner: boolean;
   partnerSalary: number;
@@ -44,6 +48,7 @@ export const DEFAULT_STATE: AppState = {
   monthlyRepayment: 3000,
   startDate: new Date().toISOString().slice(0, 10),
   offsetBalance: 20_000,
+  startingSavingsBalance: 0,
 
   events: [],
 
@@ -52,6 +57,9 @@ export const DEFAULT_STATE: AppState = {
   superSalarySacrificeAnnual: 0,
   superNonConcessionalAnnual: 0,
   superAnnualReturnPct: 7,
+
+  investmentsStartingBalance: 0,
+  investmentsAnnualReturnPct: 8,
 
   hasPartner: false,
   partnerSalary: 80_000,

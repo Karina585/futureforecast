@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { calculateAuTax, netIncomeSourcesTotal, type IncomeSource } from "./lib/auTax";
 import { simulateMortgage, type ScheduledEvent } from "./lib/mortgage";
 import { simulateSuper } from "./lib/superannuation";
+import { simulateInvestments } from "./lib/investments";
 import { combineNetWorth, sampleYearly } from "./lib/netWorth";
 import { DEFAULT_STATE, newId, type AppState } from "./lib/appState";
 import { loadState, saveState } from "./lib/storage";
@@ -9,6 +10,7 @@ import { TaxCard } from "./components/TaxCard";
 import { PartnerCard } from "./components/PartnerCard";
 import { IncomeSourcesCard } from "./components/IncomeSourcesCard";
 import { SuperCard } from "./components/SuperCard";
+import { InvestmentsCard } from "./components/InvestmentsCard";
 import { BudgetingCard } from "./components/BudgetingCard";
 import { MortgageCard } from "./components/MortgageCard";
 import { EventsCard } from "./components/EventsCard";
@@ -95,6 +97,7 @@ function App() {
         monthlyRepayment: state.monthlyRepayment,
         startDate: state.startDate,
         offsetBalance: state.offsetBalance,
+        startingSavingsBalance: state.startingSavingsBalance,
         events: state.events,
       }),
     [
@@ -103,7 +106,26 @@ function App() {
       state.monthlyRepayment,
       state.startDate,
       state.offsetBalance,
+      state.startingSavingsBalance,
       state.events,
+    ]
+  );
+
+  const investmentsResult = useMemo(
+    () =>
+      simulateInvestments(
+        {
+          startingBalance: state.investmentsStartingBalance,
+          annualReturnPct: state.investmentsAnnualReturnPct,
+          startDate: state.startDate,
+        },
+        mortgageResult.points.map((p) => p.soldFromInvestments)
+      ),
+    [
+      state.investmentsStartingBalance,
+      state.investmentsAnnualReturnPct,
+      state.startDate,
+      mortgageResult,
     ]
   );
 
@@ -145,8 +167,8 @@ function App() {
   );
 
   const netWorthPoints = useMemo(
-    () => combineNetWorth(mortgageResult, superResult),
-    [mortgageResult, superResult]
+    () => combineNetWorth(mortgageResult, superResult, investmentsResult),
+    [mortgageResult, superResult, investmentsResult]
   );
   const netWorthYearly = useMemo(() => sampleYearly(netWorthPoints), [netWorthPoints]);
   const netWorthToday = netWorthPoints[0]?.netWorth ?? 0;
@@ -202,6 +224,13 @@ function App() {
             superNonConcessionalAnnual={state.superNonConcessionalAnnual}
             superAnnualReturnPct={state.superAnnualReturnPct}
             result={superResult}
+            onChange={patch}
+          />
+          <InvestmentsCard
+            startingSavingsBalance={state.startingSavingsBalance}
+            investmentsStartingBalance={state.investmentsStartingBalance}
+            investmentsAnnualReturnPct={state.investmentsAnnualReturnPct}
+            result={investmentsResult}
             onChange={patch}
           />
           <BudgetingCard onPushFreeCashFlow={pushFreeCashFlow} />

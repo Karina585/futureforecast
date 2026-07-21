@@ -11,7 +11,9 @@
   --success: #006300;
   --series-loan: #2a78d6;
   --series-offset: #008300;
+  --series-savings: #1baf7a;
   --series-super: #4a3aa7;
+  --series-investments: #e34948;
   --series-networth: #eb6834;
 }
 
@@ -29,7 +31,9 @@
     --success: #0ca30c;
     --series-loan: #3987e5;
     --series-offset: #008300;
+    --series-savings: #199e70;
     --series-super: #9085e9;
+    --series-investments: #e66767;
     --series-networth: #d95926;
   }
 }
@@ -47,7 +51,9 @@
   --success: #0ca30c;
   --series-loan: #3987e5;
   --series-offset: #008300;
+  --series-savings: #199e70;
   --series-super: #9085e9;
+  --series-investments: #e66767;
   --series-networth: #d95926;
 }
 
@@ -136,8 +142,11 @@ body {
   .super-card {
     order: 7;
   }
-  .budgeting-card {
+  .investments-card {
     order: 8;
+  }
+  .budgeting-card {
+    order: 9;
   }
 }
 

@@ -50,7 +50,9 @@ export function ResultsChart({ points }: Props) {
     date: p.date,
     "Loan balance": -Math.round(p.loanBalance),
     "Offset balance": Math.round(p.offsetBalance),
+    "Savings balance": Math.round(p.savingsBalance),
     "Super balance": Math.round(p.superBalance),
+    "Investments balance": Math.round(p.investmentsBalance),
     "Net worth": Math.round(p.netWorth),
   }));
 
@@ -79,7 +81,9 @@ export function ResultsChart({ points }: Props) {
           <ReferenceLine y={0} stroke="var(--baseline)" />
           <Bar dataKey="Loan balance" stackId="nw" fill="var(--series-loan)" />
           <Bar dataKey="Offset balance" stackId="nw" fill="var(--series-offset)" />
+          <Bar dataKey="Savings balance" stackId="nw" fill="var(--series-savings)" />
           <Bar dataKey="Super balance" stackId="nw" fill="var(--series-super)" />
+          <Bar dataKey="Investments balance" stackId="nw" fill="var(--series-investments)" />
           <Line
             type="monotone"
             dataKey="Net worth"

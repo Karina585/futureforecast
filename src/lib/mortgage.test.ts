@@ -252,4 +252,185 @@ describe("simulateMortgage", () => {
     });
     expect(result.points.every((p) => p.offsetBalance >= 0)).toBe(true);
   });
+
+  it("defaults a repayment's account to offset for backward compatibility", () => {
+    const result = simulateMortgage({
+      loanAmount: 400_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(400_000, 6, 360),
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      events: [
+        {
+          id: "e1",
+          label: "Extra",
+          amount: 1000,
+          kind: "repayment",
+          recurrence: "once",
+          startDate: "2026-01-15",
+          // account intentionally omitted
+        },
+      ],
+      maxMonths: 2,
+    });
+    expect(result.points[1].offsetBalance).toBeCloseTo(1000, 0);
+  });
+
+  it("routes a principal-destined repayment straight into the loan balance, not offset", () => {
+    const loanAmount = 400_000;
+    const rate = 6;
+    const repayment = requiredRepayment(loanAmount, rate, 360);
+    const withPrincipal = simulateMortgage({
+      loanAmount,
+      annualInterestRatePct: rate,
+      monthlyRepayment: repayment,
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      events: [
+        {
+          id: "e1",
+          label: "Lump sum",
+          amount: 50_000,
+          kind: "repayment",
+          recurrence: "once",
+          startDate: "2026-01-15",
+          account: "principal",
+        },
+      ],
+      maxMonths: 2,
+    });
+    const point = withPrincipal.points[1];
+    expect(point.offsetBalance).toBe(0);
+    // Loan drops by (roughly) the lump sum plus the month's normal principal
+    // component, since interest is charged on the already-reduced balance.
+    expect(loanAmount - point.loanBalance).toBeGreaterThan(50_000);
+    expect(loanAmount - point.loanBalance).toBeLessThan(50_000 + repayment);
+  });
+
+  it("routes a savings-destined repayment into savingsBalance, not offset, with no interest effect", () => {
+    const loanAmount = 400_000;
+    const rate = 6;
+    const repayment = requiredRepayment(loanAmount, rate, 360);
+    const withSavings = simulateMortgage({
+      loanAmount,
+      annualInterestRatePct: rate,
+      monthlyRepayment: repayment,
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      events: [
+        {
+          id: "e1",
+          label: "To savings",
+          amount: 20_000,
+          kind: "repayment",
+          recurrence: "once",
+          startDate: "2026-01-15",
+          account: "savings",
+        },
+      ],
+      maxMonths: 2,
+    });
+    const noExtras = simulateMortgage({
+      loanAmount,
+      annualInterestRatePct: rate,
+      monthlyRepayment: repayment,
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      events: [],
+      maxMonths: 2,
+    });
+    const point = withSavings.points[1];
+    expect(point.offsetBalance).toBe(0);
+    expect(point.savingsBalance).toBeCloseTo(20_000, 0);
+    // Savings has no effect on the loan at all — same balance either way.
+    expect(point.loanBalance).toBeCloseTo(noExtras.points[1].loanBalance, 2);
+  });
+
+  it("starts savingsBalance from startingSavingsBalance and lets a redraw withdraw from it", () => {
+    const result = simulateMortgage({
+      loanAmount: 400_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(400_000, 6, 360),
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      startingSavingsBalance: 10_000,
+      events: [
+        {
+          id: "r1",
+          label: "Withdraw from savings",
+          amount: 4_000,
+          kind: "redraw",
+          recurrence: "once",
+          startDate: "2026-01-15",
+          account: "savings",
+        },
+      ],
+      maxMonths: 2,
+    });
+    expect(result.points[0].savingsBalance).toBe(10_000);
+    expect(result.points[1].savingsBalance).toBeCloseTo(6_000, 0);
+    expect(result.points[1].offsetBalance).toBe(0);
+  });
+
+  it("tracks soldFromInvestments only for repayments flagged fundedBySale", () => {
+    const result = simulateMortgage({
+      loanAmount: 400_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(400_000, 6, 360),
+      startDate: "2026-01-01",
+      offsetBalance: 0,
+      events: [
+        {
+          id: "e1",
+          label: "Share sale into offset",
+          amount: 15_000,
+          kind: "repayment",
+          recurrence: "once",
+          startDate: "2026-01-15",
+          account: "offset",
+          fundedBySale: true,
+        },
+        {
+          id: "e2",
+          label: "Bonus into offset",
+          amount: 2_000,
+          kind: "repayment",
+          recurrence: "once",
+          startDate: "2026-01-20",
+          account: "offset",
+        },
+      ],
+      maxMonths: 2,
+    });
+    expect(result.points[1].soldFromInvestments).toBeCloseTo(15_000, 0);
+    expect(result.points[1].offsetBalance).toBeCloseTo(17_000, 0);
+  });
+
+  it("counts a one-off event dated exactly on the simulation start date", () => {
+    // The date picker for a new event defaults to today, which is often the
+    // same day as the simulation's own start date. Period 1 spans
+    // (startDate, startDate+1month], so without an inclusive lower bound on
+    // the very first period, an event dated on startDate itself would never
+    // be counted.
+    const result = simulateMortgage({
+      loanAmount: 500_000,
+      annualInterestRatePct: 6,
+      monthlyRepayment: requiredRepayment(500_000, 6, 360),
+      startDate: "2026-07-21",
+      offsetBalance: 20_000,
+      events: [
+        {
+          id: "e1",
+          label: "Same-day contribution",
+          amount: 40_000,
+          kind: "repayment",
+          recurrence: "once",
+          startDate: "2026-07-21",
+          account: "offset",
+        },
+      ],
+      maxMonths: 2,
+    });
+    expect(result.points[1].offsetBalance).toBeCloseTo(60_000, 0);
+  });
 });

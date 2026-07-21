@@ -13,6 +13,8 @@
 // does not model Division 293 tax (extra 15% on concessional contributions
 // for very high income earners).
 
+import { addMonths, isoDate } from "./dateMath";
+
 export const CONTRIBUTIONS_TAX_RATE = 0.15;
 export const CONCESSIONAL_CAP = 30_000;
 export const NON_CONCESSIONAL_CAP = 120_000;
@@ -45,16 +47,6 @@ export interface SuperResult {
   totalNonConcessionalAnnual: number;
   concessionalCapExceededBy: number;
   nonConcessionalCapExceededBy: number;
-}
-
-function addMonths(date: Date, months: number): Date {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
-}
-
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
 }
 
 export function simulateSuper(input: SuperInput): SuperResult {

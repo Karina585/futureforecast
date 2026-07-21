@@ -2,17 +2,22 @@
 //
 // Each month: interest accrues on (loan balance - offset balance), the fixed
 // repayment covers that interest first and the remainder reduces the loan
-// principal. Extra repayments increase the offset balance (they don't reduce
-// the loan principal directly, matching how a real offset account works);
-// redraws decrease it. The loan is paid off when its balance reaches zero,
-// which can happen well before the original term if the offset grows.
+// principal. Extra repayments can be routed to the offset account (don't
+// reduce principal directly, matching a real offset account), straight to
+// the loan principal (a permanent, non-redrawable reduction), or into a
+// separate cash/savings balance that has no effect on the loan at all.
+// Redraws pull money back out of the offset account or the savings balance.
+// The loan is paid off when its balance reaches zero, which can happen well
+// before the original term if the offset grows or principal is paid down
+// directly.
 
-export type RecurrenceFrequency =
-  | "weekly"
-  | "fortnightly"
-  | "monthly"
-  | "quarterly"
-  | "yearly";
+import { addMonths, isoDate } from "./dateMath";
+import { occurrencesInPeriod, type RecurrenceFrequency } from "./recurrence";
+
+export type { RecurrenceFrequency };
+
+/** Where an extra repayment's money goes, or a redraw's money comes from. */
+export type FundDestination = "offset" | "principal" | "savings";
 
 export interface ScheduledEvent {
   id: string;
@@ -23,11 +28,25 @@ export interface ScheduledEvent {
   startDate: string; // ISO date
   endDate?: string; // ISO date, only for recurring events
   /**
+   * Which account this affects. Repayments default to "offset"; redraws
+   * default to "offset" too and cannot target "principal" (a direct
+   * principal payment is permanent — there's nothing left to redraw).
+   */
+  account?: FundDestination;
+  /**
+   * Only meaningful when kind is "repayment": the money is coming from
+   * selling an investment rather than external income, so it's also
+   * deducted from the investments balance instead of being new net worth.
+   */
+  fundedBySale?: boolean;
+  /**
    * Only meaningful when kind is "redraw": the id of a "repayment" event to
    * sweep from instead of using `amount`. Each time this redraw fires it
    * withdraws everything the linked event has contributed since the last
    * withdrawal (e.g. quarterly RSU tax set-asides swept out annually to pay
-   * the ATO) and resets that pool to zero.
+   * the ATO) and resets that pool to zero. Only makes sense when the linked
+   * event's account is "offset" or "savings" — a "principal" contribution
+   * leaves nothing sitting around to withdraw.
    */
   linkedEventId?: string;
 }
@@ -38,6 +57,7 @@ export interface MortgageInput {
   monthlyRepayment: number;
   startDate: string; // ISO date
   offsetBalance: number;
+  startingSavingsBalance?: number;
   events: ScheduledEvent[];
   maxMonths?: number;
 }
@@ -47,10 +67,13 @@ export interface MonthPoint {
   date: string; // ISO date, first of month
   loanBalance: number;
   offsetBalance: number;
+  savingsBalance: number;
   interestCharged: number;
   principalPaid: number;
   extraIn: number;
   extraOut: number;
+  /** Amount funded by selling investments this month (see fundedBySale). */
+  soldFromInvestments: number;
 }
 
 export interface MortgageResult {
@@ -61,86 +84,13 @@ export interface MortgageResult {
   originalTermMonths: number | null;
 }
 
-function addMonths(date: Date, months: number): Date {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
-}
-
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-/** Occurrences of a recurring event that fall within (periodStart, periodEnd]. */
-function occurrencesInPeriod(
-  event: ScheduledEvent,
-  periodStart: Date,
-  periodEnd: Date
-): number {
-  const start = new Date(event.startDate);
-  const end = event.endDate ? new Date(event.endDate) : null;
-
-  if (event.recurrence === "once") {
-    const d = start;
-    return d > periodStart && d <= periodEnd && (!end || d <= end) ? 1 : 0;
-  }
-
-  const stepDays: Record<RecurrenceFrequency, number> = {
-    weekly: 7,
-    fortnightly: 14,
-    monthly: 0, // handled by month arithmetic
-    quarterly: 0, // handled by month arithmetic
-    yearly: 0, // handled by year arithmetic
-  };
-
-  const monthlyRecurrences: RecurrenceFrequency[] = ["monthly", "quarterly", "yearly"];
-  const monthSteps: Partial<Record<RecurrenceFrequency, number>> = {
-    monthly: 1,
-    quarterly: 3,
-    yearly: 12,
-  };
-
-  let count = 0;
-  if (monthlyRecurrences.includes(event.recurrence as RecurrenceFrequency)) {
-    const cursor = new Date(start);
-    const monthStep = monthSteps[event.recurrence as RecurrenceFrequency]!;
-    // Fast-forward cursor to at or after periodStart without an unbounded loop.
-    if (cursor < periodStart) {
-      const monthsBetween =
-        (periodStart.getFullYear() - cursor.getFullYear()) * 12 +
-        (periodStart.getMonth() - cursor.getMonth());
-      const steps = Math.floor(monthsBetween / monthStep);
-      if (steps > 0) cursor.setMonth(cursor.getMonth() + steps * monthStep);
-      while (cursor < periodStart) cursor.setMonth(cursor.getMonth() + monthStep);
-    }
-    while (cursor <= periodEnd) {
-      if (cursor > periodStart && (!end || cursor <= end)) count++;
-      cursor.setMonth(cursor.getMonth() + monthStep);
-    }
-  } else {
-    const days = stepDays[event.recurrence];
-    const cursor = new Date(start);
-    if (cursor < periodStart) {
-      const msBetween = periodStart.getTime() - cursor.getTime();
-      const daysBetween = msBetween / 86_400_000;
-      const steps = Math.floor(daysBetween / days);
-      if (steps > 0) cursor.setDate(cursor.getDate() + steps * days);
-      while (cursor < periodStart) cursor.setDate(cursor.getDate() + days);
-    }
-    while (cursor <= periodEnd) {
-      if (cursor > periodStart && (!end || cursor <= end)) count++;
-      cursor.setDate(cursor.getDate() + days);
-    }
-  }
-  return count;
-}
-
 export function simulateMortgage(input: MortgageInput): MortgageResult {
   const maxMonths = input.maxMonths ?? 40 * 12;
   const monthlyRate = input.annualInterestRatePct / 100 / 12;
 
   let loanBalance = input.loanAmount;
   let offsetBalance = input.offsetBalance;
+  let savingsBalance = input.startingSavingsBalance ?? 0;
   const startDate = new Date(input.startDate);
 
   const points: MonthPoint[] = [];
@@ -159,10 +109,12 @@ export function simulateMortgage(input: MortgageInput): MortgageResult {
     date: isoDate(startDate),
     loanBalance,
     offsetBalance,
+    savingsBalance,
     interestCharged: 0,
     principalPaid: 0,
     extraIn: 0,
     extraOut: 0,
+    soldFromInvestments: 0,
   });
 
   for (let m = 1; m <= maxMonths; m++) {
@@ -171,32 +123,51 @@ export function simulateMortgage(input: MortgageInput): MortgageResult {
 
     let extraIn = 0;
     let extraOut = 0;
+    let extraOffsetIn = 0;
+    let extraSavingsIn = 0;
+    let extraPrincipalPayment = 0;
+    let soldFromInvestments = 0;
 
     // Contributions first, so a linked redraw in the same period sees them.
     for (const event of input.events) {
       if (event.kind !== "repayment") continue;
-      const occurrences = occurrencesInPeriod(event, periodStart, periodEnd);
+      const occurrences = occurrencesInPeriod(event, periodStart, periodEnd, m === 1);
       if (occurrences === 0) continue;
       const total = occurrences * event.amount;
       extraIn += total;
       contributionPools[event.id] = (contributionPools[event.id] ?? 0) + total;
+
+      const account = event.account ?? "offset";
+      if (account === "principal") extraPrincipalPayment += total;
+      else if (account === "savings") extraSavingsIn += total;
+      else extraOffsetIn += total;
+
+      if (event.fundedBySale) soldFromInvestments += total;
     }
+
+    let extraOffsetOut = 0;
+    let extraSavingsOut = 0;
 
     // Then redraws, which may sweep a linked contribution pool instead of
     // using their own fixed amount.
     for (const event of input.events) {
       if (event.kind !== "redraw") continue;
-      const occurrences = occurrencesInPeriod(event, periodStart, periodEnd);
+      const occurrences = occurrencesInPeriod(event, periodStart, periodEnd, m === 1);
       if (occurrences === 0) continue;
-      if (event.linkedEventId) {
-        extraOut += contributionPools[event.linkedEventId] ?? 0;
-        contributionPools[event.linkedEventId] = 0;
-      } else {
-        extraOut += occurrences * event.amount;
-      }
+      const account = event.account ?? "offset";
+      const total = event.linkedEventId
+        ? (contributionPools[event.linkedEventId] ?? 0)
+        : occurrences * event.amount;
+      if (event.linkedEventId) contributionPools[event.linkedEventId] = 0;
+
+      extraOut += total;
+      if (account === "savings") extraSavingsOut += total;
+      else extraOffsetOut += total;
     }
 
-    offsetBalance = Math.max(0, offsetBalance + extraIn - extraOut);
+    offsetBalance = Math.max(0, offsetBalance + extraOffsetIn - extraOffsetOut);
+    savingsBalance = Math.max(0, savingsBalance + extraSavingsIn - extraSavingsOut);
+    loanBalance = Math.max(0, loanBalance - extraPrincipalPayment);
 
     const netBalance = Math.max(0, loanBalance - offsetBalance);
     const interest = netBalance * monthlyRate;
@@ -211,10 +182,12 @@ export function simulateMortgage(input: MortgageInput): MortgageResult {
       date: isoDate(periodEnd),
       loanBalance,
       offsetBalance,
+      savingsBalance,
       interestCharged: interest,
       principalPaid,
       extraIn,
       extraOut,
+      soldFromInvestments,
     });
 
     if (loanBalance <= 0.01 && payoffMonthIndex === null) {
