@@ -45,10 +45,12 @@ export function TaxSummaryList({ result }: { result: TaxResult }) {
         <dd>{formatCurrency(result.netFortnightly)}</dd>
       </div>
       <div>
-        <dt>Effective / marginal rate</dt>
-        <dd>
-          {formatPercent(result.effectiveTaxRate)} / {formatPercent(result.marginalTaxRate)}
-        </dd>
+        <dt>Effective tax rate</dt>
+        <dd>{formatPercent(result.effectiveTaxRate)}</dd>
+      </div>
+      <div>
+        <dt>Marginal tax rate</dt>
+        <dd>{formatPercent(result.marginalTaxRate)}</dd>
       </div>
     </dl>
   );
